@@ -13,13 +13,18 @@ app.use(cors());
 app.use(express.json())
 app.use('/', userRoutes);
 
-User.sync()
-  .then(() => {
-    console.log('Database synchronized\n\n ');
-  })
-  .catch((err:any) => {
-    console.error('Database synchronization failed:', err);
-  });
+sequelize.authenticate().then(()=>{
+  User.sync()
+    .then(() => {
+      console.log('Database synchronized\n\n ');
+    })
+    .catch((err:any) => {
+      console.error('Database synchronization failed:', err);
+    });
+
+}).catch((err:any)=>{
+  console.error('Database connection failed:', err);
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
