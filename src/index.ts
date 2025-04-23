@@ -1,15 +1,30 @@
 import express from 'express';
 import cors from 'cors';
+import session from "express-session";
+import passport from "passport";
 import userRoutes from './routes/userRoutes';
 import sequelize from './config/db';
 import { Local } from './environment/env';
 import User from './models/user';
+import './config/passport';
 
 const app = express();
 const PORT = Local.Port;
-app.use('/uploads', express.static('uploads'))
+
+// app.use('/uploads', express.static('uploads'))
 
 app.use(cors());
+
+app.use(
+  session({
+    secret: Local.Client_Secret,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.json())
 app.use('/', userRoutes);
 

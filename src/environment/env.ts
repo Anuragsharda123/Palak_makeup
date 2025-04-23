@@ -10,6 +10,8 @@ interface Config{
     DB_Dialect: string;
     Secret_Key: string;
     Conn_URL: string;
+    Google_API_Client: string;
+    Client_Secret: string;
 }
 
 export const Local:Config = {
@@ -20,5 +22,7 @@ export const Local:Config = {
     DB_Host: String(process.env.DB_HOST),
     DB_Dialect: String(process.env.DB_DIALECT),
     Secret_Key: String(process.env.SECRET_KEY),
-    Conn_URL: String(process.env.Conn)
+    Conn_URL: String(process.env.Conn),
+    Google_API_Client: String(process.env.GOOGLE_API_CLIENT_ID),
+    Client_Secret: String(process.env.CLIENT_SECRET),
 }

@@ -5,6 +5,7 @@ import { Local } from "../environment/env";
 import User from "../models/user";
 
 const Secret_key:any = Local.Secret_Key
+
 export const userLogin = async(req:any, res:Response):Promise<any> => {
     try{
         const { email, password } = req.body;
@@ -40,3 +41,11 @@ export const userRegister = async (req: any, res: Response): Promise<any> => {
         res.status(500).json({ message: "Internal server error", error: err });
     }
 };
+
+export const afterLogin = (req:any, res: Response): any => {
+    try{
+        res.redirect("http://localhost:5173/student/dashboard")
+    } catch(err){
+        res.status(500).json({ message: "Internal server error", error: err });
+    }
+}
