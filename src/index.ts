@@ -29,7 +29,7 @@ app.use(express.json())
 app.use('/', userRoutes);
 
 sequelize.authenticate().then(()=>{
-  User.sync()
+  User.sync({alter: true})
     .then(() => {
       console.log('Database synchronized\n\n ');
     })

@@ -5,6 +5,7 @@ import { v4 as UUIDV4 } from "uuid";
 class User extends Model{
     public uuid!: number;
     public email!: string;
+    public name!: string;
     public password!: string;
     public isActive!: boolean;
 };
@@ -19,6 +20,10 @@ User.init({
     email: {
         type: DataTypes.STRING,
         allowNull: false,
+    },
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
     password: {
         type: DataTypes.STRING,
