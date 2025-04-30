@@ -11,14 +11,15 @@ export const authenticateJWT = (req: any, res: any, next: NextFunction) => {
 
   if (!token) return res.sendStatus(403);
 
-  jwt.verify(token, secret|| '', (err:any, retailer:any) => {
+  jwt.verify(token, secret|| '', (err:any, user:any) => {
     // console.log("user",user)
     if (err){
       console.log("Jwt ki taraf aaja bhai....")
-      return res.status(403).json({ message: 'Invalid token, UnAuthorized' });
+      return res.status(403).json({ message: "UnAuthorized Access" });
     } 
 
-    (req as any).user = retailer;
+    // (req as any).user = retailer;
+    req.user = user;
     next();
   });
 };

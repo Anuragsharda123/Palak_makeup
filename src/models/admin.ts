@@ -1,20 +1,24 @@
-import { Model, DataTypes } from "sequelize";
+import {Model, DataTypes} from "sequelize";
 import sequelize from "../config/db";
 import { v4 as UUIDV4 } from "uuid";
 
-class User extends Model{
+class Admin extends Model{
     public uuid!: string;
-    public email!: string;
     public name!: string;
+    public email!: string;
+    public adminType!: string;  // 2 is for Admin & 3 is for SuperAdmin
     public password!: string;
-    public isActive!: boolean;
 };
 
-User.init({
+Admin.init({
     uuid:{
         type: DataTypes.UUID,
         defaultValue: UUIDV4,
         primaryKey: true,
+        allowNull: false
+    },
+    name: {
+        type: DataTypes.STRING,
         allowNull: false
     },
     email: {
@@ -22,23 +26,20 @@ User.init({
         allowNull: false,
         unique: true
     },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false
+    adminType: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 2
     },
     password: {
         type: DataTypes.STRING,
-        allowNull: false,
-    },
-    isActive: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
+        allowNull: false
     }
-},{
+}, {
     sequelize,
     modelName: 'Users',
     timestamps: true,
     paranoid: true
 });
 
-export default User;
+export default Admin;

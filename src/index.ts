@@ -5,7 +5,6 @@ import passport from "passport";
 import userRoutes from './routes/userRoutes';
 import sequelize from './config/db';
 import { Local } from './environment/env';
-import User from './models/user';
 import './config/passport';
 
 const app = express();
@@ -29,7 +28,7 @@ app.use(express.json())
 app.use('/', userRoutes);
 
 sequelize.authenticate().then(()=>{
-  User.sync({alter: true})
+  sequelize.sync({alter: true})
     .then(() => {
       console.log('Database synchronized\n\n ');
     })
