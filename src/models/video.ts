@@ -4,9 +4,10 @@ import { v4 as UUIDV4 } from "uuid";
 import Module from "./module";
 
 class Video extends Model {
-    public uuid!: string
-    public videoName!: string
-    public moduleId!: string
+    public uuid!: string;
+    public videoName!: string;
+    public sequence!: number;
+    public moduleId!: string;
 };
 
 Video.init({
@@ -18,6 +19,10 @@ Video.init({
     },
     videoName: {
         type: DataTypes.STRING,
+        allowNull: false
+    },
+    sequence: {
+        type: DataTypes.INTEGER,
         allowNull: false
     }
 },{

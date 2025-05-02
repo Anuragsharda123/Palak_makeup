@@ -12,6 +12,10 @@ interface Config{
     Conn_URL: string;
     Google_API_Client: string;
     Client_Secret: string;
+    AWS_Reigon: string;
+    AWS_Access_Key_Id: string;
+    AWS_Secret_Access_Key: string;
+    S3_Bucket_Name: string;
 }
 
 export const Local:Config = {
@@ -25,4 +29,8 @@ export const Local:Config = {
     Conn_URL: String(process.env.Conn),
     Google_API_Client: String(process.env.GOOGLE_API_CLIENT_ID),
     Client_Secret: String(process.env.CLIENT_SECRET),
+    AWS_Reigon: String(process.env.AWS_REGION),
+    AWS_Access_Key_Id: String(process.env.AWS_ACCESS_KEY_ID),
+    AWS_Secret_Access_Key: String(process.env.AWS_SECRET_ACCESS_KEY),
+    S3_Bucket_Name: String(process.env.S3_BUCKET_NAME),
 }

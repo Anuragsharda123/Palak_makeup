@@ -7,6 +7,7 @@ import Course from "../models/course";
 import Module from "../models/module";
 import Video from "../models/video";
 import Admin from "../models/admin";
+import { generateUploadUrl } from "../utils/s3";
 
 const Secret_key:any = Local.Secret_Key
 
@@ -151,16 +152,26 @@ export const createModule = async (req: any, res:Response): Promise<any> => {
 // POST Request
 export const addVideo = async (req: any, res: Response): Promise<any> => {
     try{
-        const {videoName, moduleId} = req.body;
-        const newVideo = await Video.create({
-            videoName,
-            moduleId
-        });
-        if(newVideo){
-            return res.status(200).json({url: "", savedStatus: 1});
-        } else {
-            return res.status(500).json({message: "Video uploading Failed!"});
-        }
+        // console.log(req.file);
+        const {originalname, mimetype} = req.file;
+        // const {moduleId, sequence} = req.body;
+        const module = "module1";
+        const course = "course1";
+        const key = `${course}/${module}/${originalname}`
+        const url = await generateUploadUrl(key, mimetype);
+        // console.log(key);
+        // const newVideo = await Video.create({
+        //     videoName,
+        //     moduleId,
+        //     sequence
+        // });
+
+        // if(newVideo){
+        //     return res.status(200).json({url: "", savedStatus: 1});
+        // } else {
+        //     return res.status(500).json({message: "Video uploading Failed!", savedStatus: 0});
+        // }
+        return res.status(200).json({"message":"sss", "url": url});
     } catch(err){
         return ServerErrorResponse(res);
     }
@@ -182,7 +193,7 @@ export const getAllCourses = async (req:any, res: Response): Promise<any> => {
 }
 
 // GET Request
-export const getcourseModules = async (req:any, res: Response): Promise<any> => {
+export const getCourseModules = async (req:any, res: Response): Promise<any> => {
     try{
         const {uuid} = req.user;
         const {courseId} = req.query;
