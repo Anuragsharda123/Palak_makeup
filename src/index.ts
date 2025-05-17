@@ -1,3 +1,5 @@
+import fs from 'fs';
+import https from 'https';
 import express from 'express';
 import cors from 'cors';
 import session from "express-session";
@@ -22,6 +24,11 @@ app.use(
   })
 );
 
+const privateKey = fs.readFileSync('localhost-key.pem', 'utf8');
+const certificate = fs.readFileSync('localhost.pem', 'utf8');
+
+const credentials = { key: privateKey, cert: certificate };
+
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.json())
@@ -40,8 +47,13 @@ app.use('/', userRoutes);
 //   console.error('Database connection failed:', err);
 // });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server is running on http://localhost:${PORT}`);
+// });
+
+https.createServer(credentials, app)
+  .listen(3000, () => {
+    console.log('HTTPS Server running on https://localhost:3000');
+  });
 
 export default app;

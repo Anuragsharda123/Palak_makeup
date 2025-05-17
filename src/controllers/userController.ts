@@ -1,209 +1,278 @@
 import { Response } from "express";
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 import { Local } from "../environment/env";
 import User from "../models/user";
 import Course from "../models/course";
 import Module from "../models/module";
 import Video from "../models/video";
 import Admin from "../models/admin";
-import { generateUploadUrl } from "../utils/s3";
+import { generateDownloadUrl, generateUploadUrl } from "../utils/s3";
+import {ListObjectsV2Command, GetObjectCommand} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import s3 from "../config/aws";
 
-const Secret_key:any = Local.Secret_Key
+const Secret_key: any = Local.Secret_Key;
+const bucketName: any = Local.S3_Bucket_Name;
 
 // Error Response
-const ServerErrorResponse = (res: Response) => {
-    return res.status(500).json({message: "Something Went Wrong!"});
-}
-
-// POST Request
-export const userLogin = async(req: any, res: Response):Promise<any> => {
-    try{
-        const { email, password } = req.body;
-        const user = await User.findOne({ where: { email:email } });
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        } else {
-            const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) {
-                return res.status(401).json({ message: "Invalid password" });
-            } else {
-                const token = jwt.sign({ uuid: user.uuid, type: 1  }, Secret_key, );  // type 1 is for student
-                return res.status(200).json({ "message":"Login successful" ,token, userType: 1 });
-            }
-        }
-    } catch(err){
-        // res.status(500).json({ message: "Internal server error", error: err });
-        return ServerErrorResponse(res);
-    }
+const ServerErrorResponse = (res: Response, err:any) => {
+  return res.status(500).json({ message: `Something Went Wrong! ${err}  ` });
 };
 
 // POST Request
-export const adminLogin = async(req: any, res: Response): Promise<any> => {
-    try{
-        const { email, password } = req.body;
-        const admin = await Admin.findOne({ where: { email:email } });
-        if (!admin) {
-            return res.status(404).json({ message: "Admin not found" });
-        } else {
-            const isMatch = await bcrypt.compare(password, admin.password);
-            if (!isMatch) {
-                return res.status(401).json({ message: "Invalid password" });
-            } else {
-                const token = jwt.sign({ uuid: admin.uuid, type: admin.adminType  }, Secret_key, );
-                return res.status(200).json({ "message":"Login successful" ,token, userType: admin.adminType });
-            }
-        }
-    } catch(err){
-        // res.status(500).json({ message: "Internal server error", error: err });
-        return ServerErrorResponse(res);
+export const userLogin = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    } else {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ message: "Invalid password" });
+      } else {
+        const token = jwt.sign({ uuid: user.uuid, type: 1 }, Secret_key); // type 1 is for student
+        return res
+          .status(200)
+          .json({ message: "Login successful", token, userType: 1 });
+      }
     }
-}
+  } catch (err) {
+    // res.status(500).json({ message: "Internal server error", error: err });
+    return ServerErrorResponse(res, err);
+  }
+};
+
+// POST Request
+export const adminLogin = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { email, password } = req.body;
+    const admin = await Admin.findOne({ where: { email: email } });
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    } else {
+      const isMatch = await bcrypt.compare(password, admin.password);
+      if (!isMatch) {
+        return res.status(401).json({ message: "Invalid password" });
+      } else {
+        const token = jwt.sign(
+          { uuid: admin.uuid, type: admin.adminType },
+          Secret_key
+        );
+        return res.status(200).json({
+          message: "Login successful",
+          token,
+          userType: admin.adminType,
+        });
+      }
+    }
+  } catch (err) {
+    // res.status(500).json({ message: "Internal server error", error: err });
+    return ServerErrorResponse(res, err);
+  }
+};
 
 // POST Request
 export const userRegister = async (req: any, res: Response): Promise<any> => {
-    try{
-        const { email, password } = req.body;
-        const isExist = await User.findOne({where: {email : email}});
-        if(!isExist){
-            const hashedPassword = await bcrypt.hash(password, 10);
-            await User.create({ email, password: hashedPassword });
-            return res.status(201).json({"message": 'User registered successfully'});
-        } else {
-            return res.status(409).json({"message": 'User already exists'});
-        }
-    } catch(err){
-        // res.status(500).json({ message: "Internal server error", error: err });
-        return ServerErrorResponse(res);
+  try {
+    const { email, password } = req.body;
+    const isExist = await User.findOne({ where: { email: email } });
+    if (!isExist) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await User.create({ email, password: hashedPassword });
+      return res.status(201).json({ message: "User registered successfully" });
+    } else {
+      return res.status(409).json({ message: "User already exists" });
     }
+  } catch (err) {
+    // res.status(500).json({ message: "Internal server error", error: err });
+    return ServerErrorResponse(res, err);
+  }
 };
 
 // POST Request
 export const adminRegister = async (req: any, res: Response): Promise<any> => {
-    try{
-        const { email, password, adminType } = req.body;
-        const isExist = await Admin.findOne({where: {email : email}});
-        if(!isExist){
-            const hashedPassword = await bcrypt.hash(password, 10);
-            await Admin.create({ email, password: hashedPassword, adminType });
-            if(adminType==2){
-                return res.status(201).json({"message": 'Admin Created successfully'});
-            } else {
-                return res.status(201).json({"message": 'SuperAdmin Created successfully'});
-            }
-        } else {
-            return res.status(409).json({"message": 'Admin/SuperAdmin already exists'});
-        }
-    }catch(err){
-        return ServerErrorResponse(res);
+  try {
+    const { email, password, adminType } = req.body;
+    const isExist = await Admin.findOne({ where: { email: email } });
+    if (!isExist) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await Admin.create({ email, password: hashedPassword, adminType });
+      if (adminType == 2) {
+        return res.status(201).json({ message: "Admin Created successfully" });
+      } else {
+        return res
+          .status(201)
+          .json({ message: "SuperAdmin Created successfully" });
+      }
+    } else {
+      return res
+        .status(409)
+        .json({ message: "Admin/SuperAdmin already exists" });
     }
-}
+  } catch (err) {
+    return ServerErrorResponse(res, err);
+  }
+};
 
 // GET Request
 export const redirectTo = (res: Response): any => {
-    try{
-        return res.redirect("http://localhost:5173/student/dashboard")
-    } catch(err){
-        // res.status(500).json({ message: "Internal server error", error: err });
-        return ServerErrorResponse(res);
-    }
-}
+  try {
+    return res.redirect("http://localhost:5173/student/dashboard");
+  } catch (err) {
+    // res.status(500).json({ message: "Internal server error", error: err });
+    return ServerErrorResponse(res, err);
+  }
+};
 
 // POST Request
 export const createCourse = async (req: any, res: Response): Promise<any> => {
-    try{
-        const {courseName} = req.body;
-        const newCourse = await Course.create({
-            courseName
-        });
+  try {
+    const { courseName } = req.body;
+    const newCourse = await Course.create({
+      courseName,
+    });
 
-        if(newCourse){
-            return res.status(200).json({message: "Cousrse Created Successfully!"});
-        } else {
-            return res.status(500).json({message: "Cousrse Creation Failed!"});
-        }
-        
-    } catch(err){
-        // res.status(500).json({message: "Something Went Wrong!"});
-        return ServerErrorResponse(res);
+    if (newCourse) {
+      return res.status(200).json({ message: "Cousrse Created Successfully!" });
+    } else {
+      return res.status(500).json({ message: "Cousrse Creation Failed!" });
     }
-}
+  } catch (err) {
+    // res.status(500).json({message: "Something Went Wrong!"});
+    return ServerErrorResponse(res, err);
+  }
+};
 
 // POST Request
-export const createModule = async (req: any, res:Response): Promise<any> => {
-    try{
-        const {moduleName, courseId} = req.body;
-        const newModule = await Module.create({
-            moduleName,
-            courseId
-        });
+export const createModule = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { moduleName, courseId } = req.body;
+    const newModule = await Module.create({
+      moduleName,
+      courseId,
+    });
 
-        if(newModule){
-            return res.status(200).json({message: "Module Created Successfully!"});
-        } else {
-            return res.status(500).json({message: "Cousrse Creation Failed!"});
-        }
-
-    } catch(err){
-        return ServerErrorResponse(res);
+    if (newModule) {
+      return res.status(200).json({ message: "Module Created Successfully!" });
+    } else {
+      return res.status(500).json({ message: "Cousrse Creation Failed!" });
     }
-}
+  } catch (err) {
+    return ServerErrorResponse(res, err);
+  }
+};
 
-// POST Request
+// POST Request  pending
 export const addVideo = async (req: any, res: Response): Promise<any> => {
-    try{
-        // console.log(req.file);
-        const {originalname, mimetype} = req.file;
-        // const {moduleId, sequence} = req.body;
-        const module = "module1";
-        const course = "course1";
-        const key = `${course}/${module}/${originalname}`
-        const url = await generateUploadUrl(key, mimetype);
-        // console.log(key);
-        // const newVideo = await Video.create({
-        //     videoName,
-        //     moduleId,
-        //     sequence
-        // });
+  try {
+    console.log(req.file);
+    const { originalname, mimetype, buffer } = req.file;
+    // const {moduleId, sequence} = req.body;
+    console.log(req.file);
+    const module = "module1";
+    const course = "course1";
+    const key = `${course}/${module}/${originalname}`;
+    const url = await generateUploadUrl(key, mimetype, buffer);
+    // console.log(key);
+    // const newVideo = await Video.create({
+    //     videoName,
+    //     moduleId,
+    //     sequence
+    // });
 
-        // if(newVideo){
-        //     return res.status(200).json({url: "", savedStatus: 1});
-        // } else {
-        //     return res.status(500).json({message: "Video uploading Failed!", savedStatus: 0});
-        // }
-        return res.status(200).json({"message":"sss", "url": url});
-    } catch(err){
-        return ServerErrorResponse(res);
-    }
-}
-
-// GET Request
-export const getAllCourses = async (req:any, res: Response): Promise<any> => {
-    try{
-        const {uuid} = req.user;
-        const courses = await Course.findAll();
-        if(courses.length>0){
-            return res.status(200).json({courses, "message": "Courses fetched"});
-        } else {
-            return res.status(200).json({message: "Currently there is no any coures Existed! "});
-        }
-    } catch(err){
-        return ServerErrorResponse(res);
-    }
-}
+    // if(newVideo){
+    //     return res.status(200).json({url: "", savedStatus: 1});
+    // } else {
+    //     return res.status(500).json({message: "Video uploading Failed!", savedStatus: 0});
+    // }
+    return res.status(200).json({ message: "Video Uploaded Successfully", "location": url });
+  } catch (err) {
+    return ServerErrorResponse(res, err);
+  }
+};
 
 // GET Request
-export const getCourseModules = async (req:any, res: Response): Promise<any> => {
-    try{
-        const {uuid} = req.user;
-        const {courseId} = req.query;
-        const modules = await Module.findAll({where:{courseId: courseId}});
-        if(modules.length>0){
-            return res.status(200).json({modules, "message": "Modules fetched"});
-        } else {
-            return res.status(200).json({message: "Currently, there is no any module Existed for this Course! "});
-        }
-    } catch(err){
-        return ServerErrorResponse(res);
+export const getAllCourses = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { uuid } = req.user;
+    const courses = await Course.findAll();
+    if (courses.length > 0) {
+      return res.status(200).json({ courses, message: "Courses fetched" });
+    } else {
+      return res
+        .status(200)
+        .json({ message: "Currently there is no any coures Existed! " });
     }
-}
+  } catch (err) {
+    return ServerErrorResponse(res, err);
+  }
+};
+
+// GET Request
+export const getCourseModules = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { uuid } = req.user;
+    const { courseId } = req.query;
+    const modules = await Module.findAll({ where: { courseId: courseId } });
+    if (modules.length > 0) {
+      return res.status(200).json({ modules, message: "Modules fetched" });
+    } else {
+      return res.status(200).json({
+        message: "Currently, there is no any module Existed for this Course! ",
+      });
+    }
+  } catch (err) {
+    return ServerErrorResponse(res, err);
+  }
+};
+
+// Get Request
+export const getBulkVideoUrls = async (req: any, res: Response):Promise<any> => {
+  // const { courseId, moduleId } = req.params;
+  const moduleId = "module1";
+  const courseId = "course1";
+  const prefix = `${courseId}/${moduleId}/`;
+
+  try {
+    // List all .mp4 files inside the module
+    const listCommand = new ListObjectsV2Command({
+      Bucket: bucketName,
+      Prefix: prefix,
+    });
+
+    const listResponse = await s3.send(listCommand);
+
+    if (!listResponse.Contents || listResponse.Contents.length === 0) {
+      return res.status(404).json({ message: 'No videos found in this module' });
+    }
+
+    const videoUrls = await Promise.all(
+      listResponse.Contents.map(async (item) => {
+        if (!item.Key || !item.Key.endsWith('.mp4')) return null; // skip non-mp4 files
+
+        const getCommand = new GetObjectCommand({
+          Bucket: bucketName,
+          Key: item.Key,
+          ResponseContentType: 'video/mp4', // Ensures it's streamed properly
+        });
+
+        const signedUrl = await getSignedUrl(s3, getCommand, { expiresIn: 3600 }); // 1 hour expiry
+
+        return {
+          fileName: item.Key.split('/').pop(), // just the filename like intro.mp4
+          url: signedUrl,
+        };
+      })
+    );
+
+    // Filter out any nulls (non-mp4 files)
+    const filteredVideos = videoUrls.filter((v): v is { fileName: string; url: string } => v !== null);
+
+    res.status(200).json({ videos: filteredVideos });
+  } catch (error) {
+    console.error('Error fetching video URLs:', error);
+    res.status(500).json({ error: 'Something went wrong while fetching videos' });
+  }
+};

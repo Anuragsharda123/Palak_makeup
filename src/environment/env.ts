@@ -16,6 +16,7 @@ interface Config{
     AWS_Access_Key_Id: string;
     AWS_Secret_Access_Key: string;
     S3_Bucket_Name: string;
+    S3_END_POINT: string;
 }
 
 export const Local:Config = {
@@ -33,4 +34,5 @@ export const Local:Config = {
     AWS_Access_Key_Id: String(process.env.AWS_ACCESS_KEY_ID),
     AWS_Secret_Access_Key: String(process.env.AWS_SECRET_ACCESS_KEY),
     S3_Bucket_Name: String(process.env.S3_BUCKET_NAME),
+    S3_END_POINT: String(process.env.S3_END_POINT),
 }

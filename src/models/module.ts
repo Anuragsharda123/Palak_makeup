@@ -4,9 +4,11 @@ import { v4 as UUIDV4 } from "uuid";
 import Course from "./course";
 
 class Module extends Model {
-    public uuid!: string
-    public moduleName!: string
-    public courseId!: string
+    public uuid!: string;
+    public moduleName!: string;
+    public description!: string;
+    public courseId!: string;
+    public sequence!: number;
 };
 
 Module.init({

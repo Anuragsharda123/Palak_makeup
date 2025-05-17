@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addVideo, adminLogin, adminRegister, createCourse, createModule, getAllCourses, getCourseModules, redirectTo, userLogin, userRegister } from "../controllers/userController";
+import { addVideo, adminLogin, adminRegister, createCourse, createModule, getAllCourses, getBulkVideoUrls, getCourseModules, redirectTo, userLogin, userRegister } from "../controllers/userController";
 import passport from "passport";
 import upload from "../utils/multer";
 import { authenticateJWT } from "../middlewares/userAuth";
@@ -13,7 +13,9 @@ router.post('/register', userRegister);
 router.post('/adminregister', authenticateJWT, adminRegister);
 router.post("/addCourse", authenticateJWT, createCourse);
 router.post("/addModule", authenticateJWT, createModule);
-router.post("/videoupload", authenticateJWT, upload.single('video'), addVideo);
+// router.post("/videoupload", authenticateJWT, upload.single('video'), addVideo);
+router.post("/videoupload", upload.single('video'), addVideo);
+router.get("/getall", getBulkVideoUrls);
 
 // Get APIs
 router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
