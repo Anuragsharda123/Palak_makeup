@@ -1,6 +1,7 @@
 import {Model, DataTypes} from "sequelize";
 import sequelize from "../config/db";
 import { v4 as UUIDV4 } from "uuid";
+import { ENUM } from "sequelize";
 
 class Course extends Model {
     public uuid!: string;
@@ -10,7 +11,8 @@ class Course extends Model {
     public mentorDesignation!: string;
     public price!: number;
     public rating!: number;
-    public ratingCount!: number
+    public ratingCount!: number;
+    public ratingLevel!: number;
 };
 
 
@@ -25,6 +27,32 @@ Course.init({
         type: DataTypes.STRING,
         allowNull: false,
         unique: true
+    },
+    description: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    mentor: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    mentorDesignation: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false
+    },
+    rating: {
+        type: DataTypes.DECIMAL(10, 2),
+    },
+    ratingCount: {
+        type: DataTypes.INTEGER,
+    },
+    ratingLevel: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
     }
 },{
     sequelize,

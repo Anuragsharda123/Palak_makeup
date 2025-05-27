@@ -6,6 +6,7 @@ import Module from "./module";
 class Video extends Model {
     public uuid!: string;
     public videoName!: string;
+    public awsS3Key!: string;
     public sequence!: number;
     public moduleId!: string;
 };
@@ -18,6 +19,10 @@ Video.init({
         allowNull: false
     },
     videoName: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    awsS3Key:{
         type: DataTypes.STRING,
         allowNull: false
     },
