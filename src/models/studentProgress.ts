@@ -40,3 +40,6 @@ studentProgress.belongsTo(Video, { foreignKey:"videoId", onDelete: "CASCADE", on
 
 User.hasMany(studentProgress, { foreignKey:"studentId", onDelete: "CASCADE", onUpdate:"CASCADE", as:"progressUser"});
 studentProgress.belongsTo(User, { foreignKey:"studentId", onDelete: "CASCADE", onUpdate:"CASCADE", as:"progressUser"});
+
+
+export default studentProgress;

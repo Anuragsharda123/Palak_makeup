@@ -47,13 +47,13 @@ app.use('/', userRoutes);
 //   console.error('Database connection failed:', err);
 // });
 
-// app.listen(PORT, () => {
-//   console.log(`Server is running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
 
-https.createServer(credentials, app)
-  .listen(3000, () => {
-    console.log('HTTPS Server running on https://localhost:3000');
-  });
+// https.createServer(credentials, app)
+//   .listen(3000, () => {
+//     console.log('HTTPS Server running on https://localhost:3000');
+//   });
 
 export default app;

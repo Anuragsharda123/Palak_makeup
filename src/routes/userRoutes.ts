@@ -7,21 +7,26 @@ import { authenticateJWT } from "../middlewares/userAuth";
 const router = Router();
 
 // POST APIs
-router.post('/login', userLogin);
-router.post('/adminLogin', authenticateJWT, adminLogin);
-router.post('/register', userRegister);
-router.post('/adminregister', authenticateJWT, adminRegister);
-router.post("/addCourse", authenticateJWT, createCourse);
-router.post("/addModule", authenticateJWT, createModule);
-// router.post("/videoupload", authenticateJWT, upload.single('video'), addVideo);
-router.post("/videoupload", upload.single('video'), addVideo);
-router.get("/getall", getBulkVideoUrls);
+
+    // Admin Routes
+        router.post('/adminregister', authenticateJWT, adminRegister);
+        router.post('/adminLogin', authenticateJWT, adminLogin);
+        router.post("/addCourse", authenticateJWT, createCourse);
+        router.post("/addModule", authenticateJWT, createModule);
+        router.post("/videoupload", authenticateJWT, upload.single('video'), addVideo);
+
+    // Student APIs
+        router.post('/login', userLogin);
+        router.post('/register', userRegister);
+        router.get("/getall", getBulkVideoUrls);
 
 // Get APIs
-router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
-router.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), redirectTo);
-router.get("/getCourses", authenticateJWT, getAllCourses);
-router.get("/getModuleByCourse", authenticateJWT, getCourseModules);
+
+    // Student APIs
+        router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email", "https://www.googleapis.com/auth/user.phonenumbers.read", "https://www.googleapis.com/auth/user.addresses.read"], accessType: "offline", prompt: "consent"}));
+        router.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), redirectTo);
+        router.get("/getCourses", authenticateJWT, getAllCourses);
+        router.get("/getModuleByCourse", authenticateJWT, getCourseModules);
 
 
 export default router;

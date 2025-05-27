@@ -39,3 +39,5 @@ courseSubscription.belongsTo(Course, { foreignKey:"courseId", onDelete: "CASCADE
 
 User.hasMany(courseSubscription, { foreignKey:"studentId", onDelete: "CASCADE", onUpdate:"CASCADE", as:"subscribedUser"});
 courseSubscription.belongsTo(User, { foreignKey:"studentId", onDelete: "CASCADE", onUpdate:"CASCADE", as:"subscribedUser"});
+
+export default courseSubscription;

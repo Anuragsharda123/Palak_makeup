@@ -35,3 +35,5 @@ courseCertificate.belongsTo(Course, { foreignKey:"courseId", onDelete: "CASCADE"
 
 User.hasMany(courseCertificate, { foreignKey:"studentId", onDelete: "CASCADE", onUpdate:"CASCADE", as:"certificateUser"});
 courseCertificate.belongsTo(User, { foreignKey:"studentId", onDelete: "CASCADE", onUpdate:"CASCADE", as:"certificateUser"});
+
+export default courseCertificate;

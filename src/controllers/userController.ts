@@ -7,10 +7,11 @@ import Course from "../models/course";
 import Module from "../models/module";
 import Video from "../models/video";
 import Admin from "../models/admin";
-import { generateDownloadUrl, generateUploadUrl } from "../utils/s3";
+import { generateUploadUrl } from "../utils/s3";
 import {ListObjectsV2Command, GetObjectCommand} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import s3 from "../config/aws";
+import courseSubscription from "../models/courseSubscription";
 
 const Secret_key: any = Local.Secret_Key;
 const bucketName: any = Local.S3_Bucket_Name;
@@ -119,7 +120,7 @@ export const adminRegister = async (req: any, res: Response): Promise<any> => {
 // GET Request
 export const redirectTo = (res: Response): any => {
   try {
-    return res.redirect("http://localhost:5173/student/dashboard");
+    return res.redirect("http://localhost:5173");
   } catch (err) {
     // res.status(500).json({ message: "Internal server error", error: err });
     return ServerErrorResponse(res, err);
@@ -273,6 +274,50 @@ export const getBulkVideoUrls = async (req: any, res: Response):Promise<any> => 
     res.status(200).json({ videos: filteredVideos });
   } catch (error) {
     console.error('Error fetching video URLs:', error);
-    res.status(500).json({ error: 'Something went wrong while fetching videos' });
+    return ServerErrorResponse(res, error);
+  }
+};
+
+// Get Request  for Invoices
+export const getPaymentLogs = async(req:any, res:Response):Promise<any> => {
+  try{
+    const paymentLogs = await courseSubscription.findAll({include:[
+      {
+        model: Course,
+        as: 'subscribedCourse'
+      }
+    ]});
+
+    return res.status(200).json({paymentLogs});
+
+  } catch(err){
+    return ServerErrorResponse(res, err);
+  }
+};
+
+// Get Request for dashboard
+export const getStudentCourses = async(req:any, res:Response) => {
+  try{
+    const getStudentCourseaDetail = await courseSubscription.findAll({where: {isPaid : 1},
+      include:[
+        {
+          model: Course,
+          as: 'subscribedCourse'
+        }
+      ]});
+      res.status(200).json({getStudentCourseaDetail});
+  }
+  catch(err){
+    return ServerErrorResponse(res, err);
+  }
+}
+
+// Get Request for student details
+export const getStudentDetails = async(req:any, res:Response) => {
+  try{
+    const students = await User.findAll();
+    res.status(200).json({students});
+  } catch(err){
+    return ServerErrorResponse(res, err);
   }
 };
