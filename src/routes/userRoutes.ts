@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addVideo, adminLogin, adminRegister, createCourse, createModule, getAllCourses, getBulkVideoUrls, getCourseModules, redirectTo, userLogin, userRegister } from "../controllers/userController";
+import { addNotes, addVideo, adminLogin, adminRegister, createCourse, createModule, getAllCourses, getBulkVideoUrls, getCourseModules, redirectTo, userLogin, userRegister } from "../controllers/userController";
 import passport from "passport";
 import upload from "../utils/multer";
 import { authenticateJWT } from "../middlewares/userAuth";
@@ -18,15 +18,19 @@ const router = Router();
     // Student APIs
         router.post('/login', userLogin);
         router.post('/register', userRegister);
-        router.get("/getall", getBulkVideoUrls);
-
-// Get APIs
-
-    // Student APIs
+        router.post('/addNotes', authenticateJWT, addNotes)
+        
+        
+        // Get APIs
+        
+        // Student APIs
         router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email", "https://www.googleapis.com/auth/user.phonenumbers.read", "https://www.googleapis.com/auth/user.addresses.read"], accessType: "offline", prompt: "consent"}));
         router.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), redirectTo);
         router.get("/getCourses", authenticateJWT, getAllCourses);
         router.get("/getModuleByCourse", authenticateJWT, getCourseModules);
+        router.get("/getall", getBulkVideoUrls);
+
+
 
 
 export default router;

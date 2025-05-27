@@ -28,7 +28,7 @@ Course.init({
     }
 },{
     sequelize,
-    modelName: 'Users',
+    modelName: 'Courses',
     timestamps: true,
     paranoid: true
 })

@@ -2,15 +2,20 @@ import { Model, DataTypes } from "sequelize";
 import sequelize from "../config/db";
 import { v4 as UUIDV4 } from "uuid";
 
-class User extends Model{
+class Students extends Model{
     public uuid!: string;
     public email!: string;
-    public name!: string;
+    public firstName!: string;
+    public lastName!: string;
     public password!: string;
+    public address!: string;
+    public phoneNo!: string;
+    public city!: string;
+    public age!: number;
     public isActive!: boolean;
 };
 
-User.init({
+Students.init({
     uuid:{
         type: DataTypes.UUID,
         defaultValue: UUIDV4,
@@ -22,9 +27,29 @@ User.init({
         allowNull: false,
         unique: true
     },
-    name: {
+    firstName: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    lastName: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    address: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    phoneNo: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    city: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    age: {
+        type: DataTypes.INTEGER,
+        allowNull: true
     },
     password: {
         type: DataTypes.STRING,
@@ -36,9 +61,9 @@ User.init({
     }
 },{
     sequelize,
-    modelName: 'Users',
+    modelName: 'Student',
     timestamps: true,
     paranoid: true
 });
 
-export default User;
+export default Students;

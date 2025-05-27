@@ -18,13 +18,13 @@ Module.init({
         primaryKey: true,
         allowNull: false
     },
-    modelName: {
+    moduleName: {
         type: DataTypes.STRING,
         allowNull: false
     }
 },{
     sequelize,
-    modelName: 'Users',
+    modelName: 'Module',
     timestamps: true,
     paranoid: true
 });

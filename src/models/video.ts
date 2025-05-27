@@ -27,7 +27,7 @@ Video.init({
     }
 },{
     sequelize,
-    modelName: 'Users',
+    modelName: 'Video',
     timestamps: true,
     paranoid: true
 });

@@ -3,7 +3,7 @@ import { DataTypes, Model } from "sequelize";
 import { v4 as UUIDV4 } from "uuid";
 import Course from "./course";
 import Video from "./video";
-import User from "./user";
+import User from "./student";
 
 class studentProgress extends Model{
     public uuid!: string;

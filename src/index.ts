@@ -8,6 +8,8 @@ import userRoutes from './routes/userRoutes';
 import sequelize from './config/db';
 import { Local } from './environment/env';
 import './config/passport';
+import User from './models/student';
+import Admin from './models/admin';
 
 const app = express();
 const PORT = Local.Port;
@@ -34,18 +36,18 @@ app.use(passport.session());
 app.use(express.json())
 app.use('/', userRoutes);
 
-// sequelize.authenticate().then(()=>{
-//   sequelize.sync({alter: true})
-//     .then(() => {
-//       console.log('Database synchronized\n\n ');
-//     })
-//     .catch((err:any) => {
-//       console.error('Database synchronization failed:', err);
-//     });
+sequelize.authenticate().then(()=>{
+  sequelize.sync({force: true})
+    .then(() => {
+      console.log('Database synchronized\n\n ');
+    })
+    .catch((err:any) => {
+      console.error('Database synchronization failed:', err);
+    });
 
-// }).catch((err:any)=>{
-//   console.error('Database connection failed:', err);
-// });
+}).catch((err:any)=>{
+  console.error('Database connection failed:', err);
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
