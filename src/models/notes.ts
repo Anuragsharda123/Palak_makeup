@@ -7,7 +7,8 @@ class Notes extends Model{
     public uuid!: number;
     public heading!: number;
     public description!: number;
-    public type!: number;
+    public userId!: string;
+    public type!: number;  // 1 for work  2 for Ideas  3 for Tasks
 };
 
 

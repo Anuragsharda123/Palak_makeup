@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { NextFunction, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { Local } from "../environment/env";
@@ -29,7 +29,7 @@ export const userLogin = async (req: any, res: Response): Promise<any> => {
     const { email, password } = req.body;
     const user = await Student.findOne({ where: { email: email } });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User doesn't exist" });
     } else {
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
@@ -129,11 +129,14 @@ export const adminRegister = async (req: any, res: Response): Promise<any> => {
 };
 
 // GET Request
-export const redirectTo = (res: Response): any => {
+export const redirectTo = (req: any, res: Response, next:NextFunction): any => {
   try {
-    return res.redirect("http://localhost:5173");
+    console.log("------>", req.user)
+    // return res.redirect("http://localhost:5173/student/dashboard");
+    return res?.status(200).json({"message":"Login Successfully", });
   } catch (err) {
     // res.status(500).json({ message: "Internal server error", error: err });
+    // console.log(err);
     return ServerErrorResponse(res, err);
   }
 };
@@ -351,6 +354,7 @@ export const addNotes = async (req: any, res: Response) => {
 
     const newNote = await Notes.create({
       heading,
+      userId: uuid,
       description,
       type,
     });
@@ -366,14 +370,14 @@ export const addNotes = async (req: any, res: Response) => {
 };
 
 // Get Request
-export const getNotes = async (req: any, res: Response) => {
+export const getUserNotes = async (req: any, res: Response) => {
   try {
     const { uuid } = req.user;
     const { search } = req.query;
 
     const notes = await Notes.findAll({
       where: {
-        [Op.and]: [
+        [Op.or]: [
           {
             heading: {
               [Op.like]: `%${search}%`,
@@ -384,7 +388,8 @@ export const getNotes = async (req: any, res: Response) => {
               [Op.like]: `%${search}%`,
             }
           }
-        ]
+        ],
+        userId: uuid
       }
     });
 
