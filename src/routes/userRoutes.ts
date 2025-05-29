@@ -16,20 +16,20 @@ const router = Router();
         router.post("/videoupload", authenticateJWT, upload.single('video'), addVideo);
 
     // Student APIs
-        router.post('/login', userLogin);
-        router.post('/register', userRegister);
-        router.post('/addNotes', authenticateJWT, addNotes)
+        router.post('/login', userLogin); // done
+        router.post('/register', userRegister); // done
+        router.post('/addNotes', authenticateJWT, addNotes) // done
         
         
         // Get APIs
         
         // Student APIs
-        router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"]}));
-        router.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), redirectTo);
+        router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"]})); // Done
+        router.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), redirectTo); // Done page Testing Pending
         router.get("/getCourses", authenticateJWT, getAllCourses);
         router.get("/getModuleByCourse", authenticateJWT, getCourseModules);
         router.get("/getall", getBulkVideoUrls);
-        router.get("/getNotes", authenticateJWT, getUserNotes);
+        router.get("/getNotes", authenticateJWT, getUserNotes); // Done
 
 
 
