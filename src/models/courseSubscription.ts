@@ -10,6 +10,7 @@ class courseSubscription extends Model{
     public courseId!: string;
     public isPaid!: boolean;
     public isCompleted!: boolean;
+    public progress!: number;
 }
 
 courseSubscription.init({
@@ -22,6 +23,10 @@ courseSubscription.init({
     is_paid:{
         type: DataTypes.BOOLEAN,
         defaultValue: true
+    },
+    progress:{
+        type: DataTypes.DECIMAL,
+        defaultValue: 0
     },
     is_completed:{
         type: DataTypes.BOOLEAN,

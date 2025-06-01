@@ -19,7 +19,8 @@ const Secret_key: any = Local.Secret_Key;
 const bucketName: any = Local.S3_Bucket_Name;
 
 // Error Response
-const ServerErrorResponse = (res: Response, err: any) => {
+const ServerErrorResponse = async (res: Response, err: any) => {
+  await Video.findAll();
   return res.status(500).json({ message: `Something Went Wrong! ${err}  ` });
 };
 
@@ -144,9 +145,15 @@ export const redirectTo = (req: any, res: Response, next:NextFunction): any => {
 // POST Request
 export const createCourse = async (req: any, res: Response): Promise<any> => {
   try {
-    const { courseName } = req.body;
+    const { courseName, description, mentor, mentorDesignation, startAt, price } = req.body;
+    
     const newCourse = await Course.create({
       courseName,
+      description,
+      mentor,
+      mentorDesignation,
+      startAt,
+      price
     });
 
     if (newCourse) {
@@ -184,27 +191,34 @@ export const addVideo = async (req: any, res: Response): Promise<any> => {
   try {
     console.log(req.file);
     const { originalname, mimetype, buffer } = req.file;
-    // const {moduleId, sequence} = req.body;
+    const {videoName, moduleId, sequence} = req.body;
+    const module = await Module.findByPk(moduleId,{
+      include:{
+        model: Course,
+        as: 'course'
+      }
+    });
+    const courseId = module?.courseId
     console.log(req.file);
-    const module = "module1";
-    const course = "course1";
-    const key = `${course}/${module}/${originalname}`;
+    const moduleName = module?.moduleName;
+    const courseName = module?.course?.courseName;
+    const key = `${courseName}/${moduleName}/${originalname}`;
     const url = await generateUploadUrl(key, mimetype, buffer);
     // console.log(key);
-    // const newVideo = await Video.create({
-    //     videoName,
-    //     moduleId,
-    //     sequence
-    // });
+    const newVideo = await Video.create({
+      videoName,
+      sequence,
+      moduleId,
+      courseId,
+      awsS3Key: key
+    });
 
-    // if(newVideo){
-    //     return res.status(200).json({url: "", savedStatus: 1});
-    // } else {
-    //     return res.status(500).json({message: "Video uploading Failed!", savedStatus: 0});
-    // }
-    return res
-      .status(200)
-      .json({ message: "Video Uploaded Successfully", location: url });
+    if(newVideo){
+        return res.status(200).json({ message: "Video uploaded Successfully!", savedStatus: 1, location: url});
+    } else {
+        return res.status(500).json({message: "Video uploading Failed!", savedStatus: 0});
+    }
+
   } catch (err) {
     return ServerErrorResponse(res, err);
   }
@@ -248,8 +262,8 @@ export const getCourseModules = async (req: any, res: Response): Promise<any> =>
 // Get Request
 export const getBulkVideoUrls = async (req: any, res: Response): Promise<any> => {
   // const { courseId, moduleId } = req.params;
-  const moduleId = "module1";
-  const courseId = "course1";
+  const moduleId = "React State Management";
+  const courseId = "UI-UX Design Bootcamp";
   const prefix = `${courseId}/${moduleId}/`;
 
   try {
@@ -319,10 +333,11 @@ export const getPaymentLogs = async (req: any, res: Response): Promise<any> => {
 };
 
 // Get Request for dashboard
-export const getStudentCourses = async (req: any, res: Response) => {
+export const getStudentCourses = async (req: any, res: Response): Promise<any> => {
   try {
+    const {uuid} = req.user;
     const getStudentCourseaDetail = await courseSubscription.findAll({
-      where: { isPaid: 1 },
+      where: { isPaid: 1, studentId: uuid },
       include: [
         {
           model: Course,
@@ -398,3 +413,4 @@ export const getUserNotes = async (req: any, res: Response) => {
     ServerErrorResponse(res, err);
   }
 };
+

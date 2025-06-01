@@ -8,6 +8,7 @@ class Module extends Model {
     public moduleName!: string;
     public description!: string;
     public courseId!: string;
+    public course!: Course;
     public sequence!: number;
 };
 

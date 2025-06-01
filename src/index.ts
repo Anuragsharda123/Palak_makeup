@@ -33,11 +33,12 @@ const credentials = { key: privateKey, cert: certificate };
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.use('/resume', express.static('resume'));
 app.use(express.json())
 app.use('/', userRoutes);
 
 sequelize.authenticate().then(()=>{
-  sequelize.sync({alter: true})
+  sequelize.sync({alter: false})
     .then(() => {
       console.log('Database synchronized\n\n ');
     })

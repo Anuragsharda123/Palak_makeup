@@ -6,9 +6,11 @@ import { ENUM } from "sequelize";
 class Course extends Model {
     public uuid!: string;
     public courseName!: string;
+    public courseImg!: string;
     public description!: string;
     public mentor!: string;
     public mentorDesignation!: string;
+    public startAt!: Date;
     public price!: number;
     public rating!: number;
     public ratingCount!: number;
@@ -27,6 +29,11 @@ Course.init({
         type: DataTypes.STRING,
         allowNull: false,
         unique: true
+    },
+    courseImg:{
+        type: DataTypes.STRING,
+        // allowNull: true,
+        // unique: true
     },
     description: {
         type: DataTypes.STRING,
@@ -49,10 +56,15 @@ Course.init({
     },
     ratingCount: {
         type: DataTypes.INTEGER,
+        defaultValue: 0
     },
     ratingLevel: {
         type: DataTypes.INTEGER,
         defaultValue: 0
+    },
+    startAt:{
+        type: DataTypes.DATEONLY,
+        allowNull: false
     }
 },{
     sequelize,
