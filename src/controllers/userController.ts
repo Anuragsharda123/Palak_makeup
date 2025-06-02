@@ -2,7 +2,6 @@ import { NextFunction, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { Local } from "../environment/env";
-import Student from "../models/student";
 import Course from "../models/course";
 import Module from "../models/module";
 import Video from "../models/video";
@@ -14,6 +13,8 @@ import s3 from "../config/aws";
 import courseSubscription from "../models/courseSubscription";
 import Notes from "../models/notes";
 import { Op } from "sequelize";
+import coursesRating from "../models/coursesRating";
+import Students from "../models/student";
 
 const Secret_key: any = Local.Secret_Key;
 const bucketName: any = Local.S3_Bucket_Name;
@@ -28,7 +29,7 @@ const ServerErrorResponse = async (res: Response, err: any) => {
 export const userLogin = async (req: any, res: Response): Promise<any> => {
   try {
     const { email, password } = req.body;
-    const user = await Student.findOne({ where: { email: email } });
+    const user = await Students.findOne({ where: { email: email } });
     if (!user) {
       return res.status(404).json({ message: "User doesn't exist" });
     } else {
@@ -81,10 +82,10 @@ export const adminLogin = async (req: any, res: Response): Promise<any> => {
 export const userRegister = async (req: any, res: Response): Promise<any> => {
   try {
     const { email, password, FirstName, LastName, PhoneNo, Address, City, Age  } = req.body;
-    const isExist = await Student.findOne({ where: { email: email } });
+    const isExist = await Students.findOne({ where: { email: email } });
     if (!isExist) {
       const hashedPassword = await bcrypt.hash(password, 10);
-      await Student.create({
+      await Students.create({
         email,
         password: hashedPassword,
         firstName: FirstName,
@@ -335,13 +336,19 @@ export const getPaymentLogs = async (req: any, res: Response): Promise<any> => {
 // Get Request for dashboard
 export const getStudentCourses = async (req: any, res: Response): Promise<any> => {
   try {
-    const {uuid} = req.user;
+    // const {uuid} = req.user;
     const getStudentCourseaDetail = await courseSubscription.findAll({
-      where: { isPaid: 1, studentId: uuid },
+      where: { is_paid: 1, studentId: "bf4eebcd-b9a7-4509-99c3-b1c31d32f85e" },
       include: [
         {
           model: Course,
           as: "subscribedCourse",
+          include:[
+            {
+              model: coursesRating,
+              as:'ratedCourse'
+            }
+          ]
         },
       ],
     });
@@ -352,9 +359,9 @@ export const getStudentCourses = async (req: any, res: Response): Promise<any> =
 };
 
 // Get Request for student details
-export const getStudentDetails = async (req: any, res: Response) => {
+export const getStudentDetails = async (req: any, res: Response):Promise<any> => {
   try {
-    const students = await Student.findAll();
+    const students = await Students.findAll();
     res.status(200).json({ students });
   } catch (err) {
     return ServerErrorResponse(res, err);
@@ -362,7 +369,7 @@ export const getStudentDetails = async (req: any, res: Response) => {
 };
 
 // Post Request
-export const addNotes = async (req: any, res: Response) => {
+export const addNotes = async (req: any, res: Response):Promise<any> => {
   try {
     const { uuid } = req.user;
     const { heading, description, type } = req.body;
@@ -385,11 +392,11 @@ export const addNotes = async (req: any, res: Response) => {
 };
 
 // Get Request
-export const getUserNotes = async (req: any, res: Response) => {
+export const getUserNotes = async (req: any, res: Response):Promise<any> => {
   try {
     const { uuid } = req.user;
-    const { search } = req.query;
-
+    const { search, noteType } = req.query;
+    console.log("111");
     const notes = await Notes.findAll({
       where: {
         [Op.or]: [
@@ -401,6 +408,11 @@ export const getUserNotes = async (req: any, res: Response) => {
           {
             description: {
               [Op.like]: `%${search}%`,
+            }
+          },
+          {
+            type: {
+              [Op.like]: `%${noteType}%`
             }
           }
         ],
@@ -414,3 +426,66 @@ export const getUserNotes = async (req: any, res: Response) => {
   }
 };
 
+// Put Request
+export const updateStudentPassword = async (req:any, res: Response):Promise<any> => {
+  try{
+    const {uuid} = req.user;
+    const {oldPassword, newPassword} = req.body;
+
+    const student:any = Students.findByPk(uuid);
+
+    const isMatch = await bcrypt.compare(oldPassword, student.password);
+    if(isMatch){
+      const newStudentPassword = await bcrypt.hash(newPassword, 10);
+      await student.update({
+        password: newStudentPassword
+      });
+
+      res.status(200).json({"message": "Password Updated Successfully"});
+    } else {
+      res.status(401).json({"message": "Current password is wrong"});
+    }
+  } catch(err){
+    ServerErrorResponse(res, err);
+  }
+};
+
+// Delete Request
+export const deleteStudent = async(req:any, res:Response):Promise<any> => {
+  try{
+    const {uuid} = req.user;
+    const student = await Students.findByPk(uuid);
+    await student?.destroy();
+
+    res.status(200).json({"message": "Account deleted Successfully"});
+  } catch(err){
+    ServerErrorResponse(res, err);
+  }
+};
+
+// Put Request
+export const updateStudentProfile = async(req:any, res:Response):Promise<any> => {
+  try{
+    const {uuid} = req.user;
+    const {firstName, lastName, email, phoneNo, age, city, address} = req.body;
+    const student = await  Students.findByPk(uuid);
+
+    const updatedStudent = await student?.update({
+      firstName,
+      lastName,
+      email,
+      phoneNo,
+      age,
+      city,
+      address
+    });
+
+    if(updatedStudent){
+      res.status(200).json({"message": "Profile Updated Successfully"})
+    } else {
+      res.status(500).json({"message": "Profile Updation Failed"})
+    }
+  } catch(err){
+    ServerErrorResponse(res, err);
+  }
+}

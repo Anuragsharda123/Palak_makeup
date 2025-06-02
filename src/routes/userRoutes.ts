@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addNotes, addVideo, adminLogin, adminRegister, createCourse, createModule, getAllCourses, getBulkVideoUrls, getCourseModules, getStudentCourses, getUserNotes, redirectTo, userLogin, userRegister } from "../controllers/userController";
+import { addNotes, addVideo, adminLogin, adminRegister, createCourse, createModule, deleteStudent, getAllCourses, getBulkVideoUrls, getCourseModules, getStudentCourses, getUserNotes, redirectTo, updateStudentPassword, updateStudentProfile, userLogin, userRegister } from "../controllers/userController";
 import passport from "passport";
 import upload from "../utils/multer";
 import { authenticateJWT } from "../middlewares/userAuth";
@@ -24,9 +24,9 @@ const router = Router();
         router.post('/addNotes', authenticateJWT, addNotes) // done
         
         
-        // Get APIs
+// Get APIs
         
-        // Student APIs
+    // Student APIs
         router.get("/StudentCourses", getStudentCourses)
         router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"]})); // Done
         router.get("/auth/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), redirectTo); // Done page Testing Pending
@@ -36,6 +36,17 @@ const router = Router();
         router.get("/getNotes", authenticateJWT, getUserNotes); // Done
 
 
+// PUT APIs
+
+    // Student APIs
+        router.put("updateStudentPassword", authenticateJWT, updateStudentPassword);
+        router.put("updateStudentProfile", authenticateJWT, updateStudentProfile);
+
+// DELETE APIs
+
+    // Student APIs
+
+    router.delete("deleteStudent", authenticateJWT, deleteStudent);
 
 
 export default router;

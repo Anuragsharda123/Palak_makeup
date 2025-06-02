@@ -8,8 +8,8 @@ class courseSubscription extends Model{
     public uuid!: string;
     public studentId!: string;
     public courseId!: string;
-    public isPaid!: boolean;
-    public isCompleted!: boolean;
+    public is_paid!: boolean;
+    public is_completed!: boolean;
     public progress!: number;
 }
 

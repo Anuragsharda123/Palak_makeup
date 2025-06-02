@@ -1,7 +1,6 @@
 import {Model, DataTypes} from "sequelize";
 import sequelize from "../config/db";
 import { v4 as UUIDV4 } from "uuid";
-import { ENUM } from "sequelize";
 
 class Course extends Model {
     public uuid!: string;
