@@ -15,6 +15,10 @@ import Notes from "../models/notes";
 import { Op } from "sequelize";
 import coursesRating from "../models/coursesRating";
 import Students from "../models/student";
+import { PDFDocument, grayscale, StandardFonts } from "pdf-lib";
+import fs from "fs";
+import path from "path";
+import fileType from "file-type";
 
 const Secret_key: any = Local.Secret_Key;
 const bucketName: any = Local.S3_Bucket_Name;
@@ -81,7 +85,16 @@ export const adminLogin = async (req: any, res: Response): Promise<any> => {
 // POST Request
 export const userRegister = async (req: any, res: Response): Promise<any> => {
   try {
-    const { email, password, FirstName, LastName, PhoneNo, Address, City, Age  } = req.body;
+    const {
+      email,
+      password,
+      FirstName,
+      LastName,
+      PhoneNo,
+      Address,
+      City,
+      Age,
+    } = req.body;
     const isExist = await Students.findOne({ where: { email: email } });
     if (!isExist) {
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -93,7 +106,7 @@ export const userRegister = async (req: any, res: Response): Promise<any> => {
         phoneNo: PhoneNo,
         city: City,
         age: Age,
-        address: Address
+        address: Address,
       });
       return res.status(201).json({ message: "User registered successfully" });
     } else {
@@ -131,11 +144,11 @@ export const adminRegister = async (req: any, res: Response): Promise<any> => {
 };
 
 // GET Request
-export const redirectTo = (req: any, res: Response, next:NextFunction): any => {
+export const redirectTo = (req: any, res: Response, next: NextFunction ): any => {
   try {
-    console.log("------>", req.user)
+    console.log("------>", req.user);
     // return res.redirect("http://localhost:5173/student/dashboard");
-    return res?.status(200).json({"message":"Login Successfully", });
+    return res?.status(200).json({ message: "Login Successfully" });
   } catch (err) {
     // res.status(500).json({ message: "Internal server error", error: err });
     // console.log(err);
@@ -146,15 +159,22 @@ export const redirectTo = (req: any, res: Response, next:NextFunction): any => {
 // POST Request
 export const createCourse = async (req: any, res: Response): Promise<any> => {
   try {
-    const { courseName, description, mentor, mentorDesignation, startAt, price } = req.body;
-    
+    const {
+      courseName,
+      description,
+      mentor,
+      mentorDesignation,
+      startAt,
+      price,
+    } = req.body;
+
     const newCourse = await Course.create({
       courseName,
       description,
       mentor,
       mentorDesignation,
       startAt,
-      price
+      price,
     });
 
     if (newCourse) {
@@ -192,18 +212,18 @@ export const addVideo = async (req: any, res: Response): Promise<any> => {
   try {
     console.log(req.file);
     const { originalname, mimetype, buffer } = req.file;
-    const {videoName, moduleId, sequence} = req.body;
-    const module = await Module.findByPk(moduleId,{
-      include:{
+    const { videoName, moduleId, sequence } = req.body;
+    const module = await Module.findByPk(moduleId, {
+      include: {
         model: Course,
-        as: 'course'
-      }
+        as: "course",
+      },
     });
-    const courseId = module?.courseId
+    const courseId = module?.courseId;
     console.log(req.file);
     const moduleName = module?.moduleName;
     const courseName = module?.course?.courseName;
-    const key = `${courseName}/${moduleName}/${originalname}`;
+    const key = `Courses/${courseName}/${moduleName}/${originalname}`;
     const url = await generateUploadUrl(key, mimetype, buffer);
     // console.log(key);
     const newVideo = await Video.create({
@@ -211,15 +231,22 @@ export const addVideo = async (req: any, res: Response): Promise<any> => {
       sequence,
       moduleId,
       courseId,
-      awsS3Key: key
+      awsS3Key: key,
     });
 
-    if(newVideo){
-        return res.status(200).json({ message: "Video uploaded Successfully!", savedStatus: 1, location: url});
+    if (newVideo) {
+      return res
+        .status(200)
+        .json({
+          message: "Video uploaded Successfully!",
+          savedStatus: 1,
+          location: url,
+        });
     } else {
-        return res.status(500).json({message: "Video uploading Failed!", savedStatus: 0});
+      return res
+        .status(500)
+        .json({ message: "Video uploading Failed!", savedStatus: 0 });
     }
-
   } catch (err) {
     return ServerErrorResponse(res, err);
   }
@@ -260,12 +287,12 @@ export const getCourseModules = async (req: any, res: Response): Promise<any> =>
   }
 };
 
-// Get Request
+// Get Request ⁡⁣⁣⁢Pending⁡
 export const getBulkVideoUrls = async (req: any, res: Response): Promise<any> => {
   // const { courseId, moduleId } = req.params;
   const moduleId = "React State Management";
   const courseId = "UI-UX Design Bootcamp";
-  const prefix = `${courseId}/${moduleId}/`;
+  const prefix = `Courses/${courseId}/${moduleId}/`;
 
   try {
     // List all .mp4 files inside the module
@@ -343,12 +370,12 @@ export const getStudentCourses = async (req: any, res: Response): Promise<any> =
         {
           model: Course,
           as: "subscribedCourse",
-          include:[
+          include: [
             {
               model: coursesRating,
-              as:'ratedCourse'
-            }
-          ]
+              as: "ratedCourse",
+            },
+          ],
         },
       ],
     });
@@ -359,7 +386,7 @@ export const getStudentCourses = async (req: any, res: Response): Promise<any> =
 };
 
 // Get Request for student details
-export const getStudentDetails = async (req: any, res: Response):Promise<any> => {
+export const getStudentDetails = async (req: any, res: Response): Promise<any> => {
   try {
     const students = await Students.findAll();
     res.status(200).json({ students });
@@ -369,7 +396,7 @@ export const getStudentDetails = async (req: any, res: Response):Promise<any> =>
 };
 
 // Post Request
-export const addNotes = async (req: any, res: Response):Promise<any> => {
+export const addNotes = async (req: any, res: Response): Promise<any> => {
   try {
     const { uuid } = req.user;
     const { heading, description, type } = req.body;
@@ -392,7 +419,7 @@ export const addNotes = async (req: any, res: Response):Promise<any> => {
 };
 
 // Get Request
-export const getUserNotes = async (req: any, res: Response):Promise<any> => {
+export const getUserNotes = async (req: any, res: Response): Promise<any> => {
   try {
     const { uuid } = req.user;
     const { search, noteType } = req.query;
@@ -403,72 +430,73 @@ export const getUserNotes = async (req: any, res: Response):Promise<any> => {
           {
             heading: {
               [Op.like]: `%${search}%`,
-            }
+            },
           },
           {
             description: {
               [Op.like]: `%${search}%`,
-            }
+            },
           },
           {
             type: {
-              [Op.like]: `%${noteType}%`
-            }
-          }
+              [Op.like]: `%${noteType}%`,
+            },
+          },
         ],
-        userId: uuid
-      }
+        userId: uuid,
+      },
     });
 
-    res.status(200).json({"message": "Notes Fetched", notes});
+    res.status(200).json({ message: "Notes Fetched", notes });
   } catch (err: any) {
     ServerErrorResponse(res, err);
   }
 };
 
 // Put Request
-export const updateStudentPassword = async (req:any, res: Response):Promise<any> => {
-  try{
-    const {uuid} = req.user;
-    const {oldPassword, newPassword} = req.body;
+export const updateStudentPassword = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { uuid } = req.user;
+    const { oldPassword, newPassword } = req.body;
 
-    const student:any = Students.findByPk(uuid);
+    const student: any = Students.findByPk(uuid);
 
     const isMatch = await bcrypt.compare(oldPassword, student.password);
-    if(isMatch){
+    if (isMatch) {
       const newStudentPassword = await bcrypt.hash(newPassword, 10);
       await student.update({
-        password: newStudentPassword
+        password: newStudentPassword,
       });
 
-      res.status(200).json({"message": "Password Updated Successfully"});
+      res.status(200).json({ message: "Password Updated Successfully" });
     } else {
-      res.status(401).json({"message": "Current password is wrong"});
+      res.status(401).json({ message: "Current password is wrong" });
     }
-  } catch(err){
+  } catch (err) {
     ServerErrorResponse(res, err);
   }
 };
 
 // Delete Request
-export const deleteStudent = async(req:any, res:Response):Promise<any> => {
-  try{
-    const {uuid} = req.user;
+export const deleteStudent = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { uuid } = req.user;
     const student = await Students.findByPk(uuid);
     await student?.destroy();
 
-    res.status(200).json({"message": "Account deleted Successfully"});
-  } catch(err){
+    res.status(200).json({ message: "Account deleted Successfully" });
+  } catch (err) {
     ServerErrorResponse(res, err);
   }
 };
 
 // Put Request
-export const updateStudentProfile = async(req:any, res:Response):Promise<any> => {
-  try{
-    const {uuid} = req.user;
-    const {firstName, lastName, email, phoneNo, age, city, address} = req.body;
-    const student = await  Students.findByPk(uuid);
+export const updateStudentProfile = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { uuid } = req.user;
+    const { firstName, lastName, email, phoneNo, age, city, address } =
+      req.body;
+    const student = await Students.findByPk(uuid);
 
     const updatedStudent = await student?.update({
       firstName,
@@ -477,15 +505,75 @@ export const updateStudentProfile = async(req:any, res:Response):Promise<any> =>
       phoneNo,
       age,
       city,
-      address
+      address,
     });
 
-    if(updatedStudent){
-      res.status(200).json({"message": "Profile Updated Successfully"})
+    if (updatedStudent) {
+      res.status(200).json({ message: "Profile Updated Successfully" });
     } else {
-      res.status(500).json({"message": "Profile Updation Failed"})
+      res.status(500).json({ message: "Profile Updation Failed" });
     }
-  } catch(err){
+  } catch (err) {
     ServerErrorResponse(res, err);
   }
-}
+};
+
+// Post Request ⁡⁣⁣⁢Pending⁡
+export const generateCertificate = async (req: any, res: Response): Promise<any> => {
+  try {
+  } catch (err) {
+    ServerErrorResponse(res, err);
+  }
+};
+
+// Get Request
+export const getCertificate = async (req: any, res: Response): Promise<any> => {
+  try {
+    const {uuid} = req.user;
+    const student = await Students.findByPk(uuid);
+    const prefix = `Certificates/${student?.firstName}_${student?.lastName}_${student?.uuid}/`;
+
+    const listCommand = new ListObjectsV2Command({
+      Bucket: bucketName,
+      Prefix: prefix,
+    });
+
+    const listResponse = await s3.send(listCommand);
+
+    if (!listResponse.Contents || listResponse.Contents.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No Certificate found for this user" });
+    }
+
+    const certificateUrls = await Promise.all(
+      listResponse.Contents.map(async (item) => {
+        if (!item.Key || !item.Key.endsWith(".pdf")) return null; // skip non-mp4 files
+
+        const getCommand = new GetObjectCommand({
+          Bucket: bucketName,
+          Key: item.Key,
+          ResponseContentType: "pdf", // Ensures it's streamed properly
+        });
+
+        const signedUrl = await getSignedUrl(s3, getCommand, {
+          expiresIn: 3600,
+        }); // 1 hour expiry
+
+        return {
+          fileName: item.Key.split("/").pop(), // just the filename like intro.mp4
+          url: signedUrl,
+        };
+      })
+    );
+
+    // Filter out any nulls (non-mp4 files)
+    const filteredCertificate = certificateUrls.filter(
+      (v): v is { fileName: string; url: string } => v !== null
+    );
+
+    res.status(200).json({ "certificates": filteredCertificate });
+  } catch (err) {
+    ServerErrorResponse(res, err);
+  }
+};

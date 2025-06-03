@@ -11,17 +11,20 @@ const router = Router();
     // Admin Routes
         router.post('/adminregister', authenticateJWT, adminRegister);
         router.post('/adminLogin', authenticateJWT, adminLogin);
-        // router.post("/addCourse", createCourse);
         router.post("/addCourse", authenticateJWT, createCourse);
+        // router.post("/addCourse", createCourse);
+        
         router.post("/addModule", authenticateJWT, createModule);
         // router.post("/addModule", createModule);
-        // router.post("/videoupload", authenticateJWT, upload.single('video'), addVideo);
+        
         router.post("/videoupload", upload.single('video'), addVideo);
+        // router.post("/videoupload", authenticateJWT, upload.single('video'), addVideo);
 
     // Student APIs
         router.post('/login', userLogin); // done
         router.post('/register', userRegister); // done
         router.post('/addNotes', authenticateJWT, addNotes) // done
+        // router.post('/addNotes', addNotes) // done
         
         
 // Get APIs
@@ -33,7 +36,9 @@ const router = Router();
         router.get("/getAllCourses", authenticateJWT, getAllCourses);
         router.get("/getModuleByCourse", authenticateJWT, getCourseModules);
         router.get("/getCourseVideos", getBulkVideoUrls);
+        
         router.get("/getNotes", authenticateJWT, getUserNotes); // Done
+        // router.get("/getNotes", getUserNotes); // Done
 
 
 // PUT APIs
@@ -46,7 +51,7 @@ const router = Router();
 
     // Student APIs
 
-    router.delete("deleteStudent", authenticateJWT, deleteStudent);
+        router.delete("deleteStudent", authenticateJWT, deleteStudent);
 
 
 export default router;
