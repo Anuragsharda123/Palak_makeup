@@ -19,6 +19,7 @@ import { PDFDocument, grayscale, StandardFonts } from "pdf-lib";
 import fs from "fs";
 import path from "path";
 import fileType from "file-type";
+import studentCertificate from "../models/studentCertificate";
 
 const Secret_key: any = Local.Secret_Key;
 const bucketName: any = Local.S3_Bucket_Name;
@@ -521,6 +522,81 @@ export const updateStudentProfile = async (req: any, res: Response): Promise<any
 // Post Request ⁡⁣⁣⁢Pending⁡
 export const generateCertificate = async (req: any, res: Response): Promise<any> => {
   try {
+    // const {uuid} = req.user;
+    // const {courseId} = req.body;
+
+    const course = await Course.findByPk("63f9342f-9ab1-44ff-960c-649e19cc045c");
+    const student = await Students.findByPk("5d6120be-495a-4ee4-9e6f-9a690fc25feb");
+
+    const date = String(new Date()).split(" ");
+    const stringDate = `${date[2]}-${date[1]}-${date[3]}`;
+
+    const imagePath = path.join(__dirname, 'cert.jpeg');
+    const imageBytes = fs.readFileSync(imagePath);
+    const type = await fileType.fromBuffer(imageBytes);
+
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([1086, 768]);
+
+    let embeddedImage;
+    if (type?.mime === 'image/png') {
+      embeddedImage = await pdfDoc.embedPng(imageBytes);
+    } else if (type?.mime === 'image/jpeg') {
+      embeddedImage = await pdfDoc.embedJpg(imageBytes);
+    } else {
+      throw new Error('Unsupported image format. Please use PNG or JPEG.');
+    }
+
+    page.drawImage(embeddedImage, { x: 0, y: 0, width: 1086, height: 768 });
+
+    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    page.drawText(`${student?.firstName} ${student?.lastName}`||"", {
+      x: 378,
+      y: 379,
+      size: 20,
+      font,
+      color: grayscale(1)
+    });
+
+    page.drawText(course?.courseName||"", {
+      x: 236,
+      y: 346,
+      size: 16,
+      font,
+      color: grayscale(1),
+    });
+
+    page.drawText(stringDate, {
+      x: 240,
+      y: 278,
+      size: 16,
+      font,
+      color: grayscale(1),
+    });
+
+    const pdfBytes = await pdfDoc.save();
+
+    const fileKey = `certificates/${student?.firstName}_${student?.lastName}_${student?.uuid}/${course?.courseName}_${course?.uuid}.pdf`;
+
+    const uploadResult = await generateUploadUrl(fileKey, 'application/pdf', Buffer.from(pdfBytes));
+
+    if(uploadResult){
+      const newCertificate = await studentCertificate.create({
+        studentId: student?.uuid,
+        courseId: course?.uuid,
+        key: fileKey
+      });
+
+      if(newCertificate){
+        return res.status(200).json({message: 'Certificate generated and uploaded to S3 successfully', uploadDetails: uploadResult});
+      } else {
+        return res.status(500).json({message: 'Certificate generated and uploaded to DB Failed'});
+      }
+    } else {
+      return res.status(500).json({message: 'Certificate generated and uploaded to S3 successfully'});
+    }
+
   } catch (err) {
     ServerErrorResponse(res, err);
   }
@@ -529,9 +605,9 @@ export const generateCertificate = async (req: any, res: Response): Promise<any>
 // Get Request
 export const getCertificate = async (req: any, res: Response): Promise<any> => {
   try {
-    const {uuid} = req.user;
-    const student = await Students.findByPk(uuid);
-    const prefix = `Certificates/${student?.firstName}_${student?.lastName}_${student?.uuid}/`;
+    // const {uuid} = req.user;
+    const student = await Students.findByPk("5d6120be-495a-4ee4-9e6f-9a690fc25feb");
+    const prefix = `certificates/${student?.firstName}_${student?.lastName}_${student?.uuid}/`;
 
     const listCommand = new ListObjectsV2Command({
       Bucket: bucketName,
@@ -577,3 +653,12 @@ export const getCertificate = async (req: any, res: Response): Promise<any> => {
     ServerErrorResponse(res, err);
   }
 };
+
+// Post Request
+export const createCertificate = async(req: any, res: Response): Promise<any> => {
+  try{
+
+  } catch(err){
+    ServerErrorResponse(res, err);
+  }
+}

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addNotes, addVideo, adminLogin, adminRegister, createCourse, createModule, deleteStudent, getAllCourses, getBulkVideoUrls, getCourseModules, getStudentCourses, getUserNotes, redirectTo, updateStudentPassword, updateStudentProfile, userLogin, userRegister } from "../controllers/userController";
+import { addNotes, addVideo, adminLogin, adminRegister, createCourse, createModule, deleteStudent, generateCertificate, getAllCourses, getBulkVideoUrls, getCertificate, getCourseModules, getStudentCourses, getUserNotes, redirectTo, updateStudentPassword, updateStudentProfile, userLogin, userRegister } from "../controllers/userController";
 import passport from "passport";
 import upload from "../utils/multer";
 import { authenticateJWT } from "../middlewares/userAuth";
@@ -11,8 +11,8 @@ const router = Router();
     // Admin Routes
         router.post('/adminregister', authenticateJWT, adminRegister);
         router.post('/adminLogin', authenticateJWT, adminLogin);
-        router.post("/addCourse", authenticateJWT, createCourse);
-        // router.post("/addCourse", createCourse);
+        // router.post("/addCourse", authenticateJWT, createCourse);
+        router.post("/addCourse", createCourse);
         
         router.post("/addModule", authenticateJWT, createModule);
         // router.post("/addModule", createModule);
@@ -25,6 +25,9 @@ const router = Router();
         router.post('/register', userRegister); // done
         router.post('/addNotes', authenticateJWT, addNotes) // done
         // router.post('/addNotes', addNotes) // done
+
+        // router.post('/generateCertificate', authenticateJWT, generateCertificate);
+        router.post('/generateCertificate', generateCertificate);
         
         
 // Get APIs
@@ -44,8 +47,10 @@ const router = Router();
 // PUT APIs
 
     // Student APIs
-        router.put("updateStudentPassword", authenticateJWT, updateStudentPassword);
-        router.put("updateStudentProfile", authenticateJWT, updateStudentProfile);
+        router.put("/updateStudentPassword", authenticateJWT, updateStudentPassword);
+        router.put("/updateStudentProfile", authenticateJWT, updateStudentProfile);
+        // router.get("/getCertificate", authenticateJWT, getCertificate)
+        router.get("/getCertificate", getCertificate)
 
 // DELETE APIs
 
