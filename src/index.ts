@@ -10,6 +10,7 @@ import { Local } from './environment/env';
 import './config/passport';
 import User from './models/student';
 import Admin from './models/admin';
+import courseSubscription from './models/courseSubscription';
 
 const app = express();
 const PORT = Local.Port;
@@ -38,7 +39,7 @@ app.use(express.json())
 app.use('/', userRoutes);
 
 sequelize.authenticate().then(()=>{
-  sequelize.sync({alter: false})
+  courseSubscription.sync({alter: false})
     .then(() => {
       console.log('Database synchronized\n\n ');
     })

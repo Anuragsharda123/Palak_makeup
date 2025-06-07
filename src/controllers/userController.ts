@@ -169,6 +169,12 @@ export const createCourse = async (req: any, res: Response): Promise<any> => {
       price,
     } = req.body;
 
+    const isCourseExists = await Course.findOne({where:{courseName}});
+
+    if(isCourseExists){
+      return res.status(409).json({"message":"Course with this name alreaady Exists."});
+    }
+
     const newCourse = await Course.create({
       courseName,
       description,
@@ -193,6 +199,17 @@ export const createCourse = async (req: any, res: Response): Promise<any> => {
 export const createModule = async (req: any, res: Response): Promise<any> => {
   try {
     const { moduleName, courseId } = req.body;
+
+    const isCourseModuleExisted = await Module.findOne({where: {
+      [Op.and]:[
+        { moduleName },
+        { courseId }
+      ]}});
+
+      if(isCourseModuleExisted){
+        return res.status(409).json({"message": "Module with this name already existed in selected Course"});
+      }
+
     const newModule = await Module.create({
       moduleName,
       courseId,
@@ -214,17 +231,24 @@ export const addVideo = async (req: any, res: Response): Promise<any> => {
     console.log(req.file);
     const { originalname, mimetype, buffer } = req.file;
     const { videoName, moduleId, sequence } = req.body;
+    
+    const isVideoExist = await Video.findOne({where: {videoName}});
+
+    if(isVideoExist){
+      return res.status(409).json({"message":"Video Lecture with this name alreaady Exists "});
+    }
+
     const module = await Module.findByPk(moduleId, {
       include: {
         model: Course,
-        as: "course",
+        as: "courseModule",
       },
     });
     const courseId = module?.courseId;
     console.log(req.file);
     const moduleName = module?.moduleName;
-    const courseName = module?.course?.courseName;
-    const key = `Courses/${courseName}/${moduleName}/${originalname}`;
+    const courseName = module?.courseModule?.courseName;
+    const key = `courses/${courseName}/${moduleName}/${originalname}`;
     const url = await generateUploadUrl(key, mimetype, buffer);
     // console.log(key);
     const newVideo = await Video.create({
@@ -271,6 +295,37 @@ export const getAllCourses = async (req: any, res: Response): Promise<any> => {
 };
 
 // GET Request
+export const getCourseDetail = async (req: any, res: Response): Promise<any> => {
+  try{
+    const {courseId} = req.query;
+    const course = await Course.findByPk(courseId, {
+      include:[
+        {
+          model: Module,
+          as: "courseModule",
+          include: [
+            {
+              model: Video,
+              as: "module"
+            }
+          ]
+        },
+        {
+          model: coursesRating,
+          as: "ratedCourse"
+        }
+      ]
+    });
+
+
+    return res.status(200).json({"message": "Course Details Fetched", course});
+
+  } catch(err:any){
+    return ServerErrorResponse(res, err);
+  }
+}
+
+// GET Request
 export const getCourseModules = async (req: any, res: Response): Promise<any> => {
   try {
     const { uuid } = req.user;
@@ -288,55 +343,76 @@ export const getCourseModules = async (req: any, res: Response): Promise<any> =>
   }
 };
 
-// Get Request ⁡⁣⁣⁢Pending⁡
-export const getBulkVideoUrls = async (req: any, res: Response): Promise<any> => {
-  // const { courseId, moduleId } = req.params;
-  const moduleId = "React State Management";
-  const courseId = "UI-UX Design Bootcamp";
-  const prefix = `Courses/${courseId}/${moduleId}/`;
+// Get Request ⁡⁣⁣⁢Pending⁡ for video page
+export const getStudentCourseVideos = async (req: any, res: Response): Promise<any> => {
+  const { courseId } = req.query;
+
+  let course:any = await Course.findByPk(courseId, {
+    include:[
+      {
+        model: Module,
+        as: 'courseModule'
+      }
+    ]
+  });
+  const courseName = course?.courseName;
+  // const modifiedcourse = {...course, courseModule: course?.courseModule?.map((item:any)=>({...item, videolink:"testing", videoKey:"keytest"}))}
+  // const courseId = "UI-UX Design Bootcamp";
+  const prefix = `courses/${courseName}`;
 
   try {
     // List all .mp4 files inside the module
-    const listCommand = new ListObjectsV2Command({
-      Bucket: bucketName,
-      Prefix: prefix,
-    });
 
-    const listResponse = await s3.send(listCommand);
-
-    if (!listResponse.Contents || listResponse.Contents.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No videos found in this module" });
-    }
-
-    const videoUrls = await Promise.all(
-      listResponse.Contents.map(async (item) => {
-        if (!item.Key || !item.Key.endsWith(".mp4")) return null; // skip non-mp4 files
-
-        const getCommand = new GetObjectCommand({
+    const modifiedcourse = {
+      ...course.toJSON(),
+      courseModule: await Promise.all( course.courseModule.map(async(module:any) =>{
+        const listCommand = new ListObjectsV2Command({
           Bucket: bucketName,
-          Key: item.Key,
-          ResponseContentType: "video/mp4", // Ensures it's streamed properly
+          Prefix: `${prefix}/${module?.dataValues.moduleName}/`,
         });
 
-        const signedUrl = await getSignedUrl(s3, getCommand, {
-          expiresIn: 3600,
-        }); // 1 hour expiry
+        const listResponse:any = await s3.send(listCommand);
+        
+        if (!listResponse.Contents || listResponse.Contents.length === 0) {
+          return res
+            .status(404)
+            .json({ message: "No videos found in this module" });
+        };
+
+        const videoUrls = await Promise.all(
+          listResponse.Contents.map(async (item:any) => {
+            if (!item.Key || !item.Key.endsWith(".mp4")) return null; // skip non-mp4 files
+
+            const getCommand = new GetObjectCommand({
+              Bucket: bucketName,
+              Key: item.Key,
+              ResponseContentType: "video/mp4", // Ensures it's streamed properly
+            });
+
+            const signedUrl = await getSignedUrl(s3, getCommand, {
+              expiresIn: 3600,
+            }); // 1 hour expiry
+
+            return {
+              key: item.Key,
+              fileName: item.Key.split("/").pop(), // just the filename like intro.mp4
+              url: signedUrl,
+            };
+          })
+        );
+
+        const filteredVideoUrls = videoUrls.filter((v) => v !== null);
 
         return {
-          fileName: item.Key.split("/").pop(), // just the filename like intro.mp4
-          url: signedUrl,
-        };
-      })
-    );
+        ...module.dataValues,
+        filteredVideoUrls
+      }}))
+    };
+    
+    
 
-    // Filter out any nulls (non-mp4 files)
-    const filteredVideos = videoUrls.filter(
-      (v): v is { fileName: string; url: string } => v !== null
-    );
-
-    res.status(200).json({ videos: filteredVideos });
+    return res.status(200).json(modifiedcourse);
+    
   } catch (error) {
     console.error("Error fetching video URLs:", error);
     return ServerErrorResponse(res, error);
@@ -654,11 +730,11 @@ export const getCertificate = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-// Post Request
+// Post Request ⁡⁣⁣⁢Pending⁡
 export const createCertificate = async(req: any, res: Response): Promise<any> => {
   try{
 
   } catch(err){
     ServerErrorResponse(res, err);
   }
-}
+};

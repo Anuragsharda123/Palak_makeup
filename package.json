@@ -29,6 +29,7 @@
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "file-type": "^15.0.1",
+    "flatted": "^3.3.3",
     "googleapis": "^149.0.0",
     "jsonwebtoken": "^9.0.2",
     "mkcert": "^3.2.0",

@@ -8,7 +8,7 @@ class Module extends Model {
     public moduleName!: string;
     public description!: string;
     public courseId!: string;
-    public course!: Course;
+    public courseModule!: Course;
     public sequence!: number;
 };
 
@@ -30,7 +30,7 @@ Module.init({
     paranoid: true
 });
 
-Course.hasMany(Module, {foreignKey: "courseId", onDelete: "CASCADE", onUpdate: "CASCADE", as: "course"});
-Module.belongsTo(Course, {foreignKey: "courseId", onDelete: "CASCADE", onUpdate: "CASCADE", as: "course"});
+Course.hasMany(Module, {foreignKey: "courseId", onDelete: "CASCADE", onUpdate: "CASCADE", as: "courseModule"});
+Module.belongsTo(Course, {foreignKey: "courseId", onDelete: "CASCADE", onUpdate: "CASCADE", as: "courseModule"});
 
 export default Module;
